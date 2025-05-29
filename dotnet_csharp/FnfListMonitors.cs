@@ -6,7 +6,7 @@ using CSharpFNF;
 
 namespace Site24x7Integration
 {
-    public class FnfListMonitors
+    public class ListMonitors
     {
         public static async Task RunAsync()
         {
