@@ -6,6 +6,9 @@ using System.Text.Json;
 
 namespace Site24x7Integration
 {
+    /// <summary>
+    /// Handles Zoho OAuth authentication and access token retrieval for Site24x7 API.
+    /// </summary>
     public class AuthZoho
     {
         private readonly string clientId;
@@ -14,6 +17,13 @@ namespace Site24x7Integration
         private readonly string accountServerUrl;
         private readonly HttpClient httpClient;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthZoho"/> class.
+        /// </summary>
+        /// <param name="clientId">The Zoho OAuth client ID.</param>
+        /// <param name="clientSecret">The Zoho OAuth client secret.</param>
+        /// <param name="refreshToken">The Zoho OAuth refresh token.</param>
+        /// <param name="accountServerUrl">The Zoho accounts server URL.</param>
         public AuthZoho(string clientId, string clientSecret, string refreshToken, string accountServerUrl)
         {
             this.clientId = clientId;
@@ -23,6 +33,10 @@ namespace Site24x7Integration
             this.httpClient = new HttpClient();
         }
 
+        /// <summary>
+        /// Asynchronously retrieves an access token using the refresh token.
+        /// </summary>
+        /// <returns>The access token string, or null if retrieval fails.</returns>
         public async Task<string?> GetAccessTokenAsync()
         {
             var tokenUrl = $"{accountServerUrl}/oauth/v2/token";
@@ -44,6 +58,14 @@ namespace Site24x7Integration
             return null;
         }
 
+        /// <summary>
+        /// Attempts to read Zoho OAuth credentials from a file.
+        /// </summary>
+        /// <param name="authFilePath">Path to the credentials file.</param>
+        /// <param name="clientId">Output: The client ID.</param>
+        /// <param name="clientSecret">Output: The client secret.</param>
+        /// <param name="refreshToken">Output: The refresh token.</param>
+        /// <returns>True if all credentials are found and valid; otherwise, false.</returns>
         public static bool TryReadAuthFile(string authFilePath, out string clientId, out string clientSecret, out string refreshToken)
         {
             clientId = string.Empty;

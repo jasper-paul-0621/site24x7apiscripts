@@ -2,8 +2,15 @@
 using Site24x7Integration;
 using System.Text.Json;
 
+/// <summary>
+/// Entry point for the Site24x7CustomReports application.
+/// </summary>
 internal class Program
 {
+    /// <summary>
+    /// Main entry point. Handles refresh token retrieval and monitor listing logic.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
     private static async Task Main(string[] args)
     {
         // With these lines:

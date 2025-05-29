@@ -6,8 +6,19 @@ using Site24x7CustomReports;
 
 namespace Site24x7Integration
 {
+    /// <summary>
+    /// Provides methods to list Site24x7 monitors and export them in various formats.
+    /// </summary>
     public class ListMonitors
     {
+        /// <summary>
+        /// Reads authentication credentials, retrieves the monitor list from Site24x7, and exports the data.
+        /// </summary>
+        /// <remarks>
+        /// - Reads credentials from 'site24x7_auth.txt' using <see cref="AuthZoho.TryReadAuthFile"/>.
+        /// - Retrieves monitor data using <see cref="Site24x7ApiClient.GetMonitorListAsync"/>.
+        /// - Exports data to CSV, JSON, or PDF using <see cref="ExportUtils"/>.
+        /// </remarks>
         public static async Task RunAsync()
         {
             var authFilePath = "site24x7_auth.txt";
@@ -22,6 +33,12 @@ namespace Site24x7Integration
             var auth = new AuthZoho(clientId, clientSecret, refreshToken, accountUrl);
             var api = new Site24x7ApiClient(auth);
             var monitors = await api.GetMonitorListAsync();
+            Console.WriteLine($"Found {monitors.Count} monitors.");
+            if (monitors.Count == 0)
+            {
+                Console.WriteLine("No monitors found.");
+                return;
+            }   
 
             switch (exportFormat)
             {
