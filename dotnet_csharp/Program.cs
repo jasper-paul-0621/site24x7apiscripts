@@ -25,7 +25,7 @@ internal class Program
             {
                 TokenConstants.REFRESH_TOKEN = newRefreshToken;
                 REFRESH_TOKEN = newRefreshToken;
-                await FnfListMonitors.RunAsync();
+                await ListMonitors.RunAsync();
             }
             else
             {
@@ -34,7 +34,7 @@ internal class Program
         }
         else
         {
-            await FnfListMonitors.RunAsync();
+            await ListMonitors.RunAsync();
         }
     }
 }
