@@ -43,5 +43,37 @@ namespace Site24x7Integration
             }
             return null;
         }
+
+        public static bool TryReadAuthFile(string authFilePath, out string clientId, out string clientSecret, out string refreshToken)
+        {
+            clientId = string.Empty;
+            clientSecret = string.Empty;
+            refreshToken = string.Empty;
+            var authValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (!System.IO.File.Exists(authFilePath))
+                return false;
+            foreach (var line in System.IO.File.ReadAllLines(authFilePath))
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+                var parts = trimmed.Split('=', 2);
+                if (parts.Length == 2)
+                    authValues[parts[0].Trim()] = parts[1].Trim();
+            }
+            string? cid, csecret, rtoken;
+            if (!authValues.TryGetValue("CLIENT_ID", out cid) ||
+                !authValues.TryGetValue("CLIENT_SECRET", out csecret) ||
+                !authValues.TryGetValue("REFRESH_TOKEN", out rtoken) ||
+                string.IsNullOrWhiteSpace(cid) ||
+                string.IsNullOrWhiteSpace(csecret) ||
+                string.IsNullOrWhiteSpace(rtoken))
+            {
+                return false;
+            }
+            clientId = cid!;
+            clientSecret = csecret!;
+            refreshToken = rtoken!;
+            return true;
+        }
     }
 }

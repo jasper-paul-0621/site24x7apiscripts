@@ -10,9 +10,12 @@ namespace Site24x7Integration
     {
         public static async Task RunAsync()
         {
-            var clientId = TokenConstants.CLIENT_ID;
-            var clientSecret = TokenConstants.CLIENT_SECRET;
-            var refreshToken = TokenConstants.REFRESH_TOKEN;
+            var authFilePath = "site24x7_auth.txt";
+            if (!AuthZoho.TryReadAuthFile(authFilePath, out var clientId, out var clientSecret, out var refreshToken))
+            {
+                Console.WriteLine($"Missing CLIENT_ID, CLIENT_SECRET, or REFRESH_TOKEN in auth file '{authFilePath}'.");
+                return;
+            }
             var accountUrl = "https://accounts.zoho.com";
             var exportFormat = "csv"; // Default export format
 
