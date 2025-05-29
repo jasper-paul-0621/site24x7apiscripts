@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.Json;
-using CSharpFNF;
+using Site24x7CustomReports;
 
 namespace Site24x7Integration
 {

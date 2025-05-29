@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSharpFNF
+namespace Site24x7CustomReports
 {
     public class TokenConstants
     {
