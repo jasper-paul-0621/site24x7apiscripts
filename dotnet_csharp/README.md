@@ -30,10 +30,11 @@ To use the API, you need a Zoho OAuth refresh token. This project provides a hel
    - For more details, see the [Site24x7 API Authentication Guide](https://www.site24x7.com/help/api/#authentication).
 2. **Run the helper script:**
    ```sh
-   python get-refresh-token.py --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET --scope "Site24x7.Admin.All,Site24x7.Reports.All,Site24x7.Account.All,Site24x7.Operations.All,Site24x7.Internal.All" --server us
+   python get-refresh-token.py --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET --scope "Site24x7.Monitors.Read" --server us
    ```
    - Replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with your values from the Zoho API Console.
-   - Adjust the `--scope` and `--server` as needed (see script for region options).
+   - The only required scope for this project is `Site24x7.Monitors.Read` (the lowest permission for listing monitors). For other scopes, refer to the [Site24x7 API documentation](https://www.site24x7.com/help/api/#authentication).
+   - Adjust the `--server` as needed (see script for region options).
 3. **Follow the instructions in the script output:**
    - Visit the provided verification URL and enter the user code.
    - After authentication, the script will display your refresh token and environment variables.
@@ -81,6 +82,7 @@ You can change the export format in `ListMonitors.cs` by modifying the `exportFo
 ## References
 - [Zoho API Console](https://api-console.zoho.com/)
 - [Site24x7 API Authentication Guide](https://www.site24x7.com/help/api/#authentication)
+- [Site24x7 API Documentation - Scopes](https://www.site24x7.com/help/api/#authentication)
 
 ## License
 MIT License
