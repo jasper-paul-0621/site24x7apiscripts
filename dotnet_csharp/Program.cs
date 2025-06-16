@@ -3,45 +3,61 @@ using Site24x7Integration;
 using System.Text.Json;
 
 /// <summary>
-/// Entry point for the Site24x7CustomReports application.
+/// Entry point for the Site24x7CustomReports application. Handles user interaction and starts the monitor export process.
 /// </summary>
 internal class Program
 {
     /// <summary>
-    /// Main entry point. Handles refresh token retrieval and monitor listing logic.
+    /// Main entry point. Prompts the user for export format, sets up cell value conversion, and runs the monitor export.
     /// </summary>
-    /// <param name="args">Command-line arguments.</param>
+    /// <param name="args">Command-line arguments. Optionally, the first argument can specify the export format (csv, json, pdf).</param>
     private static async Task Main(string[] args)
     {
-        //// With these lines:
-        //var CLIENT_ID = TokenConstants.CLIENT_ID;
-        //var CLIENT_SECRET = TokenConstants.CLIENT_SECRET;
-        //string REFRESH_TOKEN = TokenConstants.REFRESH_TOKEN;
-        //var ACCOUNT_SERVER_URL = TokenConstants.ACCOUNT_SERVER_URL;
+        // Determine export format from command-line or prompt the user
+        string exportFormat = args.Length > 0 ? args[0].ToLower() : AskExportFormat();
 
-        ////if (args.Length > 0 && args[0].Equals("get-refresh-token", StringComparison.OrdinalIgnoreCase))
-        //if (string.IsNullOrEmpty(REFRESH_TOKEN))
-        //{
-        //    var clientId = Environment.GetEnvironmentVariable("CLIENT_ID");
-        //    var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-        //    var scope = args.Length > 1 ? args[1] : "Site24x7.Admin.Read";
-        //    var server = args.Length > 2 ? args[2] : ACCOUNT_SERVER_URL;
-        //    var device = new DeviceFlow();
-        //    string? newRefreshToken = await device.StartDeviceFlowAndGetRefreshTokenAsync(CLIENT_ID, CLIENT_SECRET, scope, server);
-        //    if (!string.IsNullOrEmpty(newRefreshToken))
-        //    {
-        //        TokenConstants.REFRESH_TOKEN = newRefreshToken;
-        //        REFRESH_TOKEN = newRefreshToken;
-        //    }
-        //    else
-        //    {
-        //        Console.WriteLine("Failed to obtain refresh token.");
-        //    }
-        //}
-        
+        // Set up a cell value converter for custom value mapping (e.g., state field)
+        var cellValueConverter = GetCellValueConverter();
+
+        // Create and run the monitor export process
         ListMonitors monitors = new ListMonitors();
-        
-        await monitors.RunAsync();
-        
+        await monitors.RunAsync(exportFormat, cellValueConverter);
+    }
+
+    /// <summary>
+    /// Prompts the user to enter the export format.
+    /// </summary>
+    /// <returns>The chosen export format (csv, json, or pdf).</returns>
+    private static string AskExportFormat()
+    {
+        Console.WriteLine("Enter export format (csv, json, pdf): ");
+        var input = Console.ReadLine()?.Trim().ToLower();
+        if (input == "csv" || input == "json" || input == "pdf")
+            return input;
+        Console.WriteLine("Invalid format. Defaulting to csv.");
+        return "csv";
+    }
+
+    /// <summary>
+    /// Returns a function that converts cell values for export, e.g., mapping state codes to text.
+    /// </summary>
+    /// <returns>A function that takes a property name and value, and returns the converted value.</returns>
+    private static Func<string, string, string> GetCellValueConverter()
+    {
+        return (property, value) =>
+        {
+            if (property == "state")
+            {
+                return value switch
+                {
+                    "0" => "Active",
+                    "3" => "Deleted",
+                    "5" => "Suspended",
+                    _ => value
+                };
+            }
+            // Add more property conversions as needed
+            return value;
+        };
     }
 }

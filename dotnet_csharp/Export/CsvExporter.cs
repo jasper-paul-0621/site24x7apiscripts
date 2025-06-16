@@ -3,13 +3,24 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using Site24x7Integration;
-using System.Threading;
 using System.Text.Json;
 
+/// <summary>
+/// Exports data to a CSV file. Supports custom cell value conversion for flexible export.
+/// </summary>
+/// <typeparam name="T">The type of data to export.</typeparam>
 public class CsvExporter<T> : IExporter<T>
 {
+    /// <summary>
+    /// Optional converter for customizing cell values during export.
+    /// </summary>
     public Func<string, string, string> CellValueConverter { get; set; } = (property, value) => value;
 
+    /// <summary>
+    /// Exports the provided data to a CSV file, applying the cell value converter if set.
+    /// </summary>
+    /// <param name="data">The data to export.</param>
+    /// <param name="filePath">The output file path.</param>
     public void Export(List<T> data, string filePath)
     {
         if (data == null || data.Count == 0)
@@ -61,6 +72,12 @@ public class CsvExporter<T> : IExporter<T>
         }
     }
 
+    /// <summary>
+    /// Converts an object to a JsonElement for property-based export.
+    /// </summary>
+    /// <typeparam name="TObj">The type of the object.</typeparam>
+    /// <param name="obj">The object to convert.</param>
+    /// <returns>A JsonElement representing the object.</returns>
     private System.Text.Json.JsonElement ToJsonElement<TObj>(TObj obj)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(obj);

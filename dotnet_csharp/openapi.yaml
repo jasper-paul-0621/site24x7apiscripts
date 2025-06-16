@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: Site24x7 List Monitors API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for the Site24x7 List Monitors API. This endpoint returns a list of monitors with fields such as monitor_id, last_updated_at, created_at, state, display_name, and monitor_type.
+servers:
+  - url: https://api.example.com
+paths:
+  /list_monitors:
+    get:
+      summary: List all monitors
+      description: Returns a list of Site24x7 monitors.
+      responses:
+        '200':
+          description: Successful response with monitor data.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Monitor'
+        '401':
+          description: Unauthorized. Invalid or missing credentials.
+        '500':
+          description: Internal server error.
+components:
+  schemas:
+    Monitor:
+      type: object
+      properties:
+        monitor_id:
+          type: string
+          example: "79911000001721012"
+        last_updated_at:
+          type: string
+          format: date-time
+          example: "2016-07-21T10:30:42+05:30"
+        created_at:
+          type: string
+          format: date-time
+          example: "2016-07-20T15:23:58+05:30"
+        state:
+          type: string
+          description: |
+            Monitor state. Values are typically:
+              - 0: Active
+              - 3: Deleted
+              - 5: Suspended
+              - (other values may be present)
+          example: "3"
+        display_name:
+          type: string
+          example: "Jasper"
+        monitor_type:
+          type: string
+          example: "AMAZON"
