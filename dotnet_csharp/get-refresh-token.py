@@ -24,19 +24,17 @@ ACCOUNT_SERVERS = {
     "sa": "https://accounts.zoho.sa"
 }
 
-sys.argv = [
-    "get-refresh-token.py",
-    "--client-id", "<>",
-    "--client-secret", "<>",
-    "--scope", "Site24x7.Admin.All,Site24x7.Reports.All,Site24x7.Account.All,Site24x7.Operations.All,Site24x7.Internal.All",
-    "--server", "us"
-]
+#sys.argv = [
+#    "get-refresh-token.py",
+#    "--scope", "Site24x7.Admin.All,Site24x7.Reports.All,Site24x7.Account.All,Site24x7.Operations.All,Site24x7.Internal.All",
+#    "--server", "us"
+#]
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Obtain a refresh token using the device flow.")
-    parser.add_argument("--client-id", required=True, help="Your client ID")
-    parser.add_argument("--client-secret", required=True, help="Your client secret")
-    parser.add_argument("--scope", required=True, help="Scope for the token (e.g., Site24x7.Admin.Read)")
+    parser.add_argument("--clientid", required=True, help="Your client ID")
+    parser.add_argument("--clientsecret", required=True, help="Your client secret")
+    parser.add_argument("--scope", help="Scope for the token (e.g., Site24x7.Admin.Read)", default="Site24x7.Admin.All,Site24x7.Reports.All,Site24x7.Account.All,Site24x7.Operations.All,Site24x7.Internal.All")
     parser.add_argument("--server", default="us", help="Server region (default: us)")
     return parser.parse_args()
 
@@ -55,7 +53,7 @@ def start_device_flow(client_id, client_secret, scope, account_server_url):
                 "prompt": "consent"
             }
         )
-        device_code_response.raise_for_status()
+        device_code_response.raise_for_status() 
         data = device_code_response.json()
 
         user_code = data["user_code"]
@@ -131,7 +129,10 @@ def main():
         print(f"Error: Invalid server region '{args.server}'. Valid regions are: {', '.join(ACCOUNT_SERVERS.keys())}")
         sys.exit(1)
 
-    start_device_flow(args.client_id, args.client_secret, args.scope, account_server_url)
+    print(args.clientid, args.clientsecret, args.scope, account_server_url)
+    print(args)
+
+    start_device_flow(args.clientid, args.clientsecret, args.scope, account_server_url)
 
 if __name__ == "__main__":
     main()

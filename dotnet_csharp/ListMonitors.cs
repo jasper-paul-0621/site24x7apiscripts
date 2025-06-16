@@ -19,14 +19,24 @@ namespace Site24x7Integration
         /// - Retrieves monitor data using <see cref="Site24x7ApiClient.GetMonitorListAsync"/>.
         /// - Exports data to CSV, JSON, or PDF using <see cref="ExportUtils"/>.
         /// </remarks>
-        public static async Task RunAsync()
+        public async Task RunAsync()
         {
             var authFilePath = "site24x7_auth.txt";
-            if (!AuthZoho.TryReadAuthFile(authFilePath, out var clientId, out var clientSecret, out var refreshToken))
+            if(File.Exists(authFilePath))
             {
-                Console.WriteLine($"Missing CLIENT_ID, CLIENT_SECRET, or REFRESH_TOKEN in auth file '{authFilePath}'.");
+                Console.WriteLine($"Using auth file: {authFilePath}");
+            }
+            else
+            {
+                Console.WriteLine($"Auth file '{authFilePath}' not found. Please create it with CLIENT_ID, CLIENT_SECRET, and REFRESH_TOKEN.");
                 return;
             }
+
+            if (!AuthZoho.TryReadAuthFile(authFilePath, out var clientId, out var clientSecret, out var refreshToken))
+                {
+                    Console.WriteLine($"Missing CLIENT_ID, CLIENT_SECRET, or REFRESH_TOKEN in auth file '{authFilePath}'.");
+                    return;
+                }
             var accountUrl = "https://accounts.zoho.com";
             var exportFormat = "csv"; // Default export format
 
@@ -40,24 +50,33 @@ namespace Site24x7Integration
                 return;
             }   
 
-            switch (exportFormat)
+            // Generic cell value converter for state and other mappings
+            Func<string, string, string> cellValueConverter = (property, value) =>
             {
-                case "csv":
-                    ExportUtils.ExportToCsv(monitors, "monitors.csv");
-                    Console.WriteLine("Exported to monitors.csv");
-                    break;
-                case "json":
-                    ExportUtils.ExportToJson(monitors, "monitors.json");
-                    Console.WriteLine("Exported to monitors.json");
-                    break;
-                case "pdf":
-                    ExportUtils.ExportToPdf(monitors, "monitors.pdf");
-                    Console.WriteLine("Exported to monitors.pdf");
-                    break;
-                default:
-                    Console.WriteLine($"Unknown export format: {exportFormat}");
-                    break;
-            }
+                if (property == "state")
+                {
+                    return value switch
+                    {
+                        "0" => "Active",
+                        "3" => "Deleted",
+                        "5" => "Suspended",
+                        _ => value
+                    };
+                }
+                // Add more property conversions as needed
+                return value;
+            };
+
+            var exporter = ExporterFactory.GetExporter<JsonElement>(exportFormat, cellValueConverter);
+            string filePath = exportFormat.ToLower() switch
+            {
+                "csv" => "monitors.csv",
+                "json" => "monitors.json",
+                "pdf" => "monitors.pdf",
+                _ => throw new NotSupportedException($"Unknown export format: {exportFormat}")
+            };
+            exporter.Export(monitors, filePath);
+            Console.WriteLine($"Exported to {filePath}");
         }
     }
 }

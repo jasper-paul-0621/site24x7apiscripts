@@ -72,7 +72,7 @@ namespace Site24x7Integration
                 ["client_id"] = clientId,
                 ["client_secret"] = clientSecret,
                 ["scope"] = scope,
-                ["grant_type"] = "device_token"
+                ["grant_type"] = "refresh_token"
             });
             var response = await httpClient.PostAsync(authUrl, content);
             response.EnsureSuccessStatusCode();

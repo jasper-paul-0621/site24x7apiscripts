@@ -14,15 +14,15 @@ namespace Site24x7CustomReports
         /// <summary>
         /// The Zoho OAuth client ID.
         /// </summary>
-        public static string CLIENT_ID = "<YOUR_CLIENT_ID>";
+        public static string CLIENT_ID = "";
         /// <summary>
         /// The Zoho OAuth client secret.
         /// </summary>
-        public static string CLIENT_SECRET = "<YOUR_CLIENT_SECRET>";
+        public static string CLIENT_SECRET = "";
         /// <summary>
         /// The Zoho OAuth refresh token.
         /// </summary>
-        public static string REFRESH_TOKEN = "<YOUR_REFRESH_TOKEN>";
+        public static string REFRESH_TOKEN = "";
         /// <summary>
         /// The Zoho accounts server URL.
         /// </summary>
