@@ -11,11 +11,26 @@ namespace Site24x7Integration
     /// </summary>
     public class AuthZoho
     {
-        private readonly string clientId;
-        private readonly string clientSecret;
-        private readonly string refreshToken;
-        private readonly string accountServerUrl;
+        private string clientId;
+        private string clientSecret;
+        private string refreshToken;
+
+        private string accessToken;
+        private string accountServerUrl;
         private readonly HttpClient httpClient;
+
+        private const string AuthFilePath = "site24x7_auth.txt";
+
+        public AuthZoho()
+        {
+            // Default constructor for cases where parameters are not provided
+            clientId = string.Empty;
+            clientSecret = string.Empty;
+            refreshToken = string.Empty;
+            accessToken = string.Empty;
+            accountServerUrl = "https://accounts.zoho.com";
+            httpClient = new HttpClient();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AuthZoho"/> class.
@@ -34,11 +49,24 @@ namespace Site24x7Integration
         }
 
         /// <summary>
+        /// Gets the internal HttpClient instance.
+        /// </summary>
+        public HttpClient AuthHttpClient
+        {
+            get { return this.httpClient; }
+        }
+        
+        /// <summary>
         /// Asynchronously retrieves an access token using the refresh token.
         /// </summary>
         /// <returns>The access token string, or null if retrieval fails.</returns>
-        public async Task<string?> GetAccessTokenAsync()
+        public async Task<string?> GetAccessTokenAsync(bool forceRefresh = false)
         {
+            if (!forceRefresh && !string.IsNullOrEmpty(accessToken))
+            {   
+                return accessToken; // Return cached token if available and not forcing refresh
+            }
+            
             var tokenUrl = $"{accountServerUrl}/oauth/v2/token";
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
@@ -53,8 +81,10 @@ namespace Site24x7Integration
             var json = await JsonDocument.ParseAsync(stream);
             if (json.RootElement.TryGetProperty("access_token", out var tokenElement))
             {
-                return tokenElement.GetString();
+                this.accessToken = tokenElement.GetString() ?? string.Empty;
+                return this.accessToken;
             }
+
             return null;
         }
 
@@ -66,11 +96,9 @@ namespace Site24x7Integration
         /// <param name="clientSecret">Output: The client secret.</param>
         /// <param name="refreshToken">Output: The refresh token.</param>
         /// <returns>True if all credentials are found and valid; otherwise, false.</returns>
-        public static bool TryReadAuthFile(string authFilePath, out string clientId, out string clientSecret, out string refreshToken)
+        private bool ReadAuthFile(string authFilePath)
         {
-            clientId = string.Empty;
-            clientSecret = string.Empty;
-            refreshToken = string.Empty;
+            Console.WriteLine($"Reading Zoho OAuth credentials from {authFilePath}");
             var authValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             if (!System.IO.File.Exists(authFilePath))
                 return false;
@@ -92,10 +120,21 @@ namespace Site24x7Integration
             {
                 return false;
             }
-            clientId = cid!;
-            clientSecret = csecret!;
-            refreshToken = rtoken!;
+            this.clientId = cid!;
+            this.clientSecret = csecret!;
+            this.refreshToken = rtoken!;
             return true;
+        }
+
+        internal bool Authorize()
+        {
+            bool authTrue = ReadAuthFile(AuthZoho.AuthFilePath);
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret) || string.IsNullOrEmpty(refreshToken))
+            {
+                throw new InvalidOperationException("Zoho OAuth credentials are not set. Please provide CLIENT_ID, CLIENT_SECRET, and REFRESH_TOKEN in the site24x7_auth.txt file.");
+            }
+
+            return authTrue;
         }
     }
 }

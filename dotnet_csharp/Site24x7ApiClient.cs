@@ -8,13 +8,20 @@ using System.Collections.Generic;
 
 namespace Site24x7Integration
 {
+    public interface ISite24x7ApiClient
+    {
+        Task<List<JsonElement>> GetMonitorListAsync();
+        Task<List<JsonElement>> GetMonitorsAsync();
+        Task<List<JsonElement>> GetMonitorTypesAsync();
+    }
+
+
     /// <summary>
     /// Client for interacting with the Site24x7 API, including monitor retrieval and type queries.
     /// </summary>
-    public class Site24x7ApiClient
+    public class Site24x7ApiClient : ISite24x7ApiClient
     {
         private readonly AuthZoho authZoho;
-        private readonly HttpClient httpClient;
         private const string BaseUrl = "https://www.site24x7.com/api/";
 
         /// <summary>
@@ -24,7 +31,6 @@ namespace Site24x7Integration
         public Site24x7ApiClient(AuthZoho authZoho)
         {
             this.authZoho = authZoho;
-            this.httpClient = new HttpClient();
         }
 
         /// <summary>
@@ -35,21 +41,47 @@ namespace Site24x7Integration
         /// <returns>The root <see cref="JsonElement"/> of the API response.</returns>
         private async Task<JsonElement> MakeApiRequestAsync(string endpoint, IDictionary<string, string>? parameters = null)
         {
-
             parameters ??= new Dictionary<string, string>();
             var token = await authZoho.GetAccessTokenAsync();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Zoho-oauthtoken", token);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new InvalidOperationException("Access token is null or empty. Please authenticate first.");
+            }
+
+            authZoho.AuthHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Zoho-oauthtoken", token);
             var url = BaseUrl + endpoint;
             if (parameters.Any())
             {
                 var query = string.Join("&", parameters.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
                 url += "?" + query;
             }
-            var response = await httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-            using var stream = await response.Content.ReadAsStreamAsync();
-            var doc = await JsonDocument.ParseAsync(stream);
-            return doc.RootElement.Clone();
+
+            try
+            {
+                var response = await authZoho.AuthHttpClient.GetAsync(url);
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    // Token might be expired, try to refresh and retry once
+                    token = await authZoho.GetAccessTokenAsync(true);
+                    if (string.IsNullOrEmpty(token))
+                        throw new InvalidOperationException("Failed to refresh access token.");
+                    authZoho.AuthHttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Zoho-oauthtoken", token);
+                    response = await authZoho.AuthHttpClient.GetAsync(url);
+                }
+                response.EnsureSuccessStatusCode();
+                using var stream = await response.Content.ReadAsStreamAsync();
+                var doc = await JsonDocument.ParseAsync(stream);
+                return doc.RootElement.Clone();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new InvalidOperationException($"Error making API request to {url}: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException($"Error parsing JSON response from {url}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -73,19 +105,58 @@ namespace Site24x7Integration
         }
 
         /// <summary>
-        /// Gets the monitor list (with details) from the Site24x7 API.
+        /// Gets the monitor list (with details) from the Site24x7 API, iterating until offset is empty or null to get all monitors.
+        /// Includes safeguards against infinite loops, handles exceptions, and out-of-memory errors.
+        /// Prints the offset if found.
         /// </summary>
         /// <returns>A list of monitor <see cref="JsonElement"/> objects with details.</returns>
         public async Task<List<JsonElement>> GetMonitorListAsync()
         {
-            var root = await MakeApiRequestAsync("list_monitors");
-            var data = root.GetProperty("data");
-            var monitors = data.GetProperty("monitors");
-            if (monitors.ValueKind == JsonValueKind.Array)
+            var allMonitors = new List<JsonElement>();
+            string? offset = null;
+            int maxPages = 1000; // Safeguard: maximum number of pages to fetch
+            int pageCount = 0;
+            try
             {
-                return monitors.EnumerateArray().ToList();
+                do
+                {
+                    var parameters = offset != null ? new Dictionary<string, string> { ["offset"] = offset } : null;
+                    var root = await MakeApiRequestAsync("list_monitors", parameters);
+                    var data = root.GetProperty("data");
+                    var monitors = data.GetProperty("monitors");
+                    if (monitors.ValueKind == JsonValueKind.Array)
+                    {
+                        allMonitors.AddRange(monitors.EnumerateArray());
+                    }
+                    offset = data.TryGetProperty("offset", out var offsetProp) &&
+                             offsetProp.ValueKind == JsonValueKind.String &&
+                             !string.IsNullOrEmpty(offsetProp.GetString())
+                        ? offsetProp.GetString()
+                        : null;
+                    if (!string.IsNullOrEmpty(offset))
+                        Console.WriteLine($"Next offset found: {offset}");
+                    else
+                        Console.WriteLine("No more offsets found, ending pagination.");
+
+                    // Safeguard against infinite pagination
+
+
+                    pageCount++;
+                    if (pageCount >= maxPages)
+                    {
+                        throw new InvalidOperationException($"Aborting: exceeded maximum page limit ({maxPages}). Possible infinite pagination.");
+                    }
+                } while (!string.IsNullOrEmpty(offset));
             }
-            return new List<JsonElement>();
+            catch (OutOfMemoryException)
+            {
+                throw new InvalidOperationException("Out of memory while fetching monitor list. Partial results returned.");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error fetching monitor list: {ex.Message}", ex);
+            }
+            return allMonitors;
         }
     }
 }

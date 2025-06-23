@@ -1,4 +1,5 @@
 ﻿using Site24x7CustomReports;
+using Site24x7CustomReports.Services;
 using Site24x7Integration;
 using System.Text.Json;
 
@@ -19,9 +20,16 @@ internal class Program
         // Set up a cell value converter for custom value mapping (e.g., state field)
         var cellValueConverter = GetCellValueConverter();
 
-        // Create and run the monitor export process
-        ListMonitors monitors = new ListMonitors();
-        await monitors.RunAsync(exportFormat, cellValueConverter);
+        // Instantiate services
+        IExportService exportService = new ExportService(exportFormat);
+
+        // Create and run the monitor export process using services
+        var monitors = new ListMonitors(exportService);
+        await monitors.RunAsync(cellValueConverter);
+
+        Console.WriteLine("Export completed. Press Enter to exit.");
+        Console.ReadLine();
+        Environment.Exit(0);
     }
 
     /// <summary>

@@ -1,0 +1,11 @@
+# Site24x7 Release Package
+
+This archive contains:
+- Site24x7CustomReports.exe (release build, single file)
+- get-refresh-token.ps1 (PowerShell helper)
+- site24x7_auth.txt (empty, for user credentials)
+
+Instructions:
+1. Fill in your credentials in site24x7_auth.txt as needed.
+2. Run get-refresh-token.ps1 to obtain a refresh token.
+3. Use Site24x7CustomReports.exe as described in the documentation.
